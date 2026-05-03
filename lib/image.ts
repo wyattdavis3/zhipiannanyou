@@ -1,35 +1,70 @@
 import { prisma } from './prisma'
 
-export const generateImage = async (prompt: string): Promise<string> => {
-  const config = await prisma.characterConfig.findUnique({
-    where: { key: 'base_image_url' }
-  })
-  
-  const baseImageUrl = config?.value || process.env.AXING_BASE_IMAGE_URL || ''
+export const generateImage = async (prompt: string, baseImageUrl?: string): Promise<string> => {
+  if (!baseImageUrl) {
+    const config = await prisma.characterConfig.findUnique({
+      where: { key: 'base_image_url' }
+    })
+    baseImageUrl = config?.value || process.env.AXING_BASE_IMAGE_URL || ''
+  }
   
   if (!baseImageUrl) {
     return ''
   }
   
+  if (!baseImageUrl.startsWith('http')) {
+    baseImageUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}${baseImageUrl}`
+  }
+  
   try {
-    const response = await fetch('https://ark.cn-beijing.volces.com/api/text2image/v1/image/edit', {
+    console.log('=== Image Generation Debug ===')
+    console.log('VOLC_API_KEY exists:', !!process.env.VOLC_API_KEY)
+    console.log('VOLC_IMAGE_MODEL:', process.env.VOLC_IMAGE_MODEL)
+    console.log('baseImageUrl:', baseImageUrl ? baseImageUrl.substring(0, 50) + '...' : 'empty')
+    console.log('prompt:', prompt)
+    
+    const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.VOLC_API_KEY}`
       },
       body: JSON.stringify({
-        endpoint_id: process.env.VOLC_IMAGE_MODEL,
+        model: process.env.VOLC_IMAGE_MODEL,
         prompt: prompt,
         image_url: baseImageUrl,
-        strength: 0.7,
-        guidance_scale: 7.5
+        size: '2048x2048',
+        strength: 0.7
       })
     })
     
+    console.log('Image API Response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Image API Error:', errorText)
+      return ''
+    }
+    
     const data = await response.json()
-    return data.result?.image_url || ''
-  } catch {
+    console.log('Image API Response:', JSON.stringify(data, null, 2))
+    
+    let imageUrl = ''
+    if (data.data?.[0]?.url) {
+      imageUrl = data.data[0].url
+    } else if (data.result?.image_url) {
+      imageUrl = data.result.image_url
+    } else if (data.urls?.[0]) {
+      imageUrl = data.urls[0]
+    } else if (data.image_url) {
+      imageUrl = data.image_url
+    }
+    
+    console.log('Generated image URL:', imageUrl ? imageUrl.substring(0, 50) + '...' : 'empty')
+    
+    return imageUrl
+  } catch (error) {
+    console.error('Image generation error:', error)
     return ''
   }
 }

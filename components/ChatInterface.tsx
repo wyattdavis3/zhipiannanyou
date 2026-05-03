@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import ChatMessage from './ChatMessage'
 import type { Message } from '@/types'
 
@@ -13,7 +14,9 @@ export default function ChatInterface() {
   const [imageUrl, setImageUrl] = useState('')
   const [imageCaption, setImageCaption] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
+  const { data: session, status } = useSession()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -24,28 +27,38 @@ export default function ChatInterface() {
   }, [messages])
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) {
+    if (status === 'loading') return
+    
+    if (!session) {
       router.push('/')
       return
     }
 
-    fetch('/api/chat', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    fetch('/api/chat')
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           setMessages(data.data.messages)
         }
       })
+  }, [session, status])
+
+  useEffect(() => {
+    const textarea = inputRef.current
+    if (!textarea) return
+
+    const adjustHeight = () => {
+      textarea.style.height = 'auto'
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+    }
+
+    textarea.addEventListener('input', adjustHeight)
+    return () => textarea.removeEventListener('input', adjustHeight)
   }, [])
 
   const handleSend = async () => {
     if (!input.trim() || loading) return
-
-    const token = localStorage.getItem('token')
-    if (!token) return
+    if (!session) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -54,11 +67,15 @@ export default function ChatInterface() {
       createdAt: new Date()
     }
     
+    const imageKeywords = ['想看你', '来张照片', '发张照片', '照片', '图片', '看看你']
+    const needsImage = imageKeywords.some(keyword => input.includes(keyword))
+    
     const loadingMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
       content: '...',
-      createdAt: new Date()
+      createdAt: new Date(),
+      loadingType: needsImage ? 'image' : 'normal'
     }
 
     setInput('')
@@ -70,7 +87,6 @@ export default function ChatInterface() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ message: input })
       })
@@ -96,15 +112,13 @@ export default function ChatInterface() {
   }
 
   const handleGetImage = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) return
+    if (!session) return
 
     try {
       const response = await fetch('/api/image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ prompt: 'young man in casual clothes, warm smile, daily life scene' })
       })
@@ -130,37 +144,55 @@ export default function ChatInterface() {
     }
   }
 
+  const handleLogout = async () => {
+    const { signOut } = await import('next-auth/react')
+    await signOut({ callbackUrl: '/' })
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-gradient-axing animate-pulse"></div>
+      </div>
+    )
+  }
+
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100">
-      <div className="bg-white/80 backdrop-blur-lg shadow-sm">
+    <div className="h-screen flex flex-col bg-gradient-warm">
+      <div className="glass-effect border-b border-white/30">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold">星</span>
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full overflow-hidden shadow-md border-2 border-white">
+                <img 
+                  src="/axing-base.webp" 
+                  alt="阿星" 
+                  className="w-full h-full object-cover object-position-[50%_30%]"
+                />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></span>
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">阿星</h2>
+              <p className="text-xs text-gray-400">在线中</p>
             </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={handleGetImage}
-              className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+              className="group p-2.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-300"
               title="要张照片"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </button>
             <button
-              onClick={() => {
-                localStorage.removeItem('token')
-                router.push('/')
-              }}
-              className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
+              onClick={handleLogout}
+              className="group p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-300"
               title="退出登录"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
@@ -171,16 +203,23 @@ export default function ChatInterface() {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="max-w-2xl mx-auto">
           {messages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white text-2xl font-bold">星</span>
+            <div className="h-full flex flex-col items-center justify-center py-20">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 bg-gradient-axing-blue rounded-2xl flex items-center justify-center shadow-lg animate-float">
+                  <span className="text-white font-display text-2xl">星</span>
+                </div>
+                <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-gradient-axing rounded-full flex items-center justify-center animate-wave">
+                  <span className="text-white text-xs">Hi</span>
+                </div>
               </div>
-              <p className="text-gray-500">嗨，我是阿星。今天想聊点什么？</p>
-              <p className="text-gray-400 text-sm mt-2">我跟你说啊，我研究过了，你是我见过最适合被我喜欢的人</p>
+              <p className="text-gray-500 mb-2 text-center">嗨，我是阿星。今天想聊点什么？</p>
+              <p className="text-gray-400 text-sm text-center max-w-xs">
+                我跟你说啊，我研究过了，你是我见过最适合被我喜欢的人
+              </p>
             </div>
           ) : (
-            messages.map(message => (
-              <ChatMessage key={message.id} message={message} />
+            messages.map((message, index) => (
+              <ChatMessage key={message.id} message={message} index={index} />
             ))
           )}
           
@@ -188,45 +227,71 @@ export default function ChatInterface() {
         </div>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-lg border-t border-gray-100">
+      <div className="glass-effect border-t border-white/30">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-end gap-3">
             <div className="flex-1 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-50 to-blue-50 rounded-2xl opacity-50"></div>
               <textarea
+                ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="输入消息..."
-                className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none resize-none transition-all text-gray-900"
+                className="relative w-full px-4 py-3 pr-12 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none resize-none transition-all text-gray-900 placeholder-gray-400 scrollbar-hide"
                 rows={1}
-                style={{ maxHeight: '120px' }}
               />
+              <div className="absolute right-3 bottom-3 text-gray-400 text-xs">
+                {input.length > 0 && `${input.length}/500`}
+              </div>
             </div>
             <button
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              className="p-3 bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-full hover:from-pink-600 hover:to-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative p-3.5 bg-gradient-axing text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
+              {loading ? (
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              )}
+              <div className="absolute inset-0 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </button>
           </div>
         </div>
       </div>
 
       {showImageModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowImageModal(false)}>
-          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden" onClick={e => e.stopPropagation()}>
-            {imageUrl ? (
-              <img src={imageUrl} alt="阿星的照片" className="w-full h-64 object-cover" />
-            ) : (
-              <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
-                <p className="text-gray-400">图片加载失败</p>
-              </div>
-            )}
-            <div className="p-4">
-              <p className="text-gray-700">{imageCaption}</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setShowImageModal(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-axing-lg animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="relative">
+              {imageUrl ? (
+                <img 
+                  src={imageUrl} 
+                  alt="阿星的照片" 
+                  className="w-full h-72 object-cover"
+                />
+              ) : (
+                <div className="w-full h-72 bg-gray-100 flex items-center justify-center">
+                  <p className="text-gray-400">图片加载失败</p>
+                </div>
+              )}
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-700 leading-relaxed">{imageCaption}</p>
             </div>
           </div>
         </div>

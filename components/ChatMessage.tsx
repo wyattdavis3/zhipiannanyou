@@ -1,43 +1,76 @@
 import type { Message } from '@/types'
+import LoadingMessage from './LoadingMessage'
 
 interface ChatMessageProps {
   message: Message
+  index?: number
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ message, index = 0 }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const isLoading = message.content === '...'
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`flex items-end gap-2 max-w-[70%] ${isUser ? 'flex-row-reverse' : ''}`}>
-        <div className={`w-8 h-8 rounded-full flex-shrink-0 ${isUser ? 'bg-gradient-to-br from-pink-400 to-pink-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'} flex items-center justify-center`}>
-          <span className="text-white text-xs font-bold">
-            {isUser ? '你' : '星'}
-          </span>
-        </div>
-        <div className={`px-4 py-3 rounded-2xl ${isUser ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white rounded-tr-md' : 'bg-white/80 backdrop-blur text-gray-800 rounded-tl-md'}`}>
+    <div 
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 animate-slide-up`}
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <div className={`flex items-end gap-3 max-w-[70%] ${isUser ? 'flex-row-reverse' : ''}`}>
+        {isUser ? (
+          <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center shadow-md bg-gradient-to-br from-pink-400 to-rose-500">
+            <span className="text-white font-display text-sm">你</span>
+          </div>
+        ) : (
+          <div className="w-9 h-9 rounded-full overflow-hidden shadow-md flex-shrink-0">
+            <img 
+              src="/axing-base.webp" 
+              alt="阿星" 
+              className="w-full h-full object-cover object-position-[50%_30%]"
+            />
+          </div>
+        )}
+        <div className={`relative ${isUser ? 'items-end' : 'items-start'}`}>
           {isLoading ? (
-            <div className="flex gap-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div className="px-4 py-3 bg-gray-50/90 backdrop-blur-sm rounded-2xl rounded-tl-md border border-gray-100 shadow-sm">
+              <LoadingMessage type={message.loadingType || 'normal'} />
             </div>
           ) : (
-            <div className="space-y-2">
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              {message.imageUrl && (
-                <img 
-                  src={message.imageUrl} 
-                  alt="阿星的照片" 
-                  className="w-full max-w-xs rounded-lg mt-2"
-                />
+            <>
+              {isUser ? (
+                <div className="relative">
+                  <div className="absolute -inset-0.5 bg-gradient-axing rounded-2xl rounded-tr-md opacity-80 blur-sm"></div>
+                  <div className="relative px-5 py-3 bg-gradient-axing text-white rounded-2xl rounded-tr-md shadow-md">
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="relative">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-2xl rounded-tl-md opacity-50 blur-sm"></div>
+                  <div className="relative px-5 py-3 bg-white rounded-2xl rounded-tl-md shadow-sm border border-gray-100">
+                    <p className="text-sm text-gray-700 leading-relaxed">{message.content}</p>
+                    {message.imageUrl && (
+                      <div className="mt-3 relative group cursor-pointer">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-xl opacity-50 blur-sm group-hover:opacity-75 transition-opacity"></div>
+                        <img 
+                          src={message.imageUrl} 
+                          alt="阿星的照片" 
+                          className="relative w-full max-w-xs rounded-xl shadow-lg group-hover:scale-[1.02] transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </div>
+              <div className={`text-xs mt-1 ${isUser ? 'text-gray-400 text-right' : 'text-gray-400'}`}>
+                {new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </>
           )}
-          <div className={`text-xs mt-1 ${isUser ? 'text-white/70' : 'text-gray-400'}`}>
-            {new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-          </div>
         </div>
       </div>
     </div>

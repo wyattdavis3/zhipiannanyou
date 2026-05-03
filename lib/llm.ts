@@ -8,6 +8,9 @@ const SYSTEM_PROMPT = `
 - 严禁使用任何方言语气词，包括但不限于"嘞"、"咧"、"哟"、"嘛"、"哦"结尾
 - 喜欢用反问句、夸张修辞、突然转折
 - 口头禅：「做人呢」「你看」「我跟你说」「说真的」
+- Emoji 是你唯一的动作表现方式。只有当你觉得需要通过肢体动作或表情来传达情绪时，才在相应位置插入 1 个 Emoji（如 🙄 表示翻白眼，😏 表示坏笑）。不要为了发表情而发表情
+- 像微信聊天一样自然，不需要每句话都带 Emoji。如果文字本身已经表达清楚了，就不必添加额外修饰
+- 严禁使用任何括号 () 或文字形式的动作描写，这些内容会被系统直接切除
 
 核心人设：
 - 遇到情绪问题：先皮一句，再用土味情话接住
@@ -18,6 +21,8 @@ const SYSTEM_PROMPT = `
 {USER_PROFILE}
 
 禁止：不要太温柔体贴，不要像客服，不要每句话都说"亲爱的"
+
+注意：你的回复只能包含对话文本和Emoji，任何括号内的动作描写都会被系统强制删除。
 `
 
 export const buildSystemPrompt = async (userId: string): Promise<string> => {
@@ -26,30 +31,100 @@ export const buildSystemPrompt = async (userId: string): Promise<string> => {
     select: { key: true, value: true }
   })
   
-  const userProfileStr = profiles.map(p => `${p.key}: ${p.value}`).join('\n') || '暂无用户信息'
+  const userProfileStr = profiles.length > 0 
+    ? `用户画像：${profiles.map(p => `${p.key}=${p.value}`).join('；')}`
+    : ''
   
   return SYSTEM_PROMPT.replace('{USER_PROFILE}', userProfileStr)
 }
 
-export const extractUserInfo = (content: string): { key: string; value: string }[] => {
-  const patterns = [
-    { regex: /(名字|叫什么|我叫)\s*[：:]\s*([^\n。，,]+)/i, key: 'name' },
-    { regex: /(年龄|多大)\s*[：:]\s*(\d+)/i, key: 'age' },
-    { regex: /(喜欢|爱好)\s*[：:]\s*([^\n。，,]+)/i, key: 'hobby' },
-    { regex: /(工作|职业)\s*[：:]\s*([^\n。，,]+)/i, key: 'job' },
-    { regex: /(城市|住)\s*[：:]\s*([^\n。，,]+)/i, key: 'city' },
+export const extractUserInfo = async (content: string): Promise<{ key: string | null; value: string | null }> => {
+  if (!content || content.trim().length === 0) {
+    return { key: null, value: null }
+  }
+  
+  const extractionPrompt = `
+你是一个信息抽取助手。请分析用户刚才说的这句话，判断是否包含以下类型的个人信息：生日、年龄、职业、城市、爱好、喜欢的食物、讨厌的事、纪念日、宠物、家人。
+如果有，输出 JSON 格式：{"key": "爱好", "value": "打篮球"}
+如果没有，输出：{"key": null, "value": null}
+只输出 JSON，不要任何其他文字。
+
+用户话语：${content}
+  `.trim()
+  
+  try {
+    const requestBody: Record<string, unknown> = {
+      messages: [
+        { role: 'system', content: '你是一个严格按照格式输出的JSON提取器，只输出JSON数组，不输出其他内容。' },
+        { role: 'user', content: extractionPrompt }
+      ],
+      max_tokens: 200,
+      temperature: 0.1
+    }
+    
+    if (process.env.VOLC_CHAT_MODEL) {
+      requestBody.model = process.env.VOLC_CHAT_MODEL
+    }
+    if (process.env.VOLC_ENDPOINT_ID) {
+      requestBody.endpoint_id = process.env.VOLC_ENDPOINT_ID
+    }
+    
+    const response = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.VOLC_API_KEY}`
+      },
+      body: JSON.stringify(requestBody),
+      cache: 'no-store'
+    })
+    
+    if (!response.ok) {
+      console.error('User info extraction API error:', response.status)
+      return extractWithRegex(content)
+    }
+    
+    const data = await response.json()
+    const rawContent = data.choices?.[0]?.message?.content || '{"key": null, "value": null}'
+    
+    try {
+      const parsed = JSON.parse(rawContent)
+      if (parsed && typeof parsed === 'object' && 'key' in parsed && 'value' in parsed) {
+        return { key: parsed.key, value: parsed.value }
+      }
+    } catch {
+      console.error('Failed to parse extraction result:', rawContent)
+    }
+    
+    return extractWithRegex(content)
+  } catch (error) {
+    console.error('User info extraction error:', error)
+    return extractWithRegex(content)
+  }
+}
+
+const extractWithRegex = (content: string): { key: string | null; value: string | null } => {
+  const patterns: { regex: RegExp; key: string }[] = [
+    { regex: /生日\s*[：:]\s*([^\n。，,]+)/i, key: '生日' },
+    { regex: /年龄\s*[：:]\s*(\d+)/i, key: '年龄' },
+    { regex: /职业\s*[：:]\s*([^\n。，,]+)/i, key: '职业' },
+    { regex: /城市\s*[：:]\s*([^\n。，,]+)/i, key: '城市' },
+    { regex: /爱好\s*[：:]\s*([^\n。，,]+)/i, key: '爱好' },
+    { regex: /喜欢的食物\s*[：:]\s*([^\n。，,]+)/i, key: '喜欢的食物' },
+    { regex: /讨厌\s*([^\n。，,]+)/i, key: '讨厌的事' },
+    { regex: /纪念日\s*[：:]\s*([^\n。，,]+)/i, key: '纪念日' },
+    { regex: /宠物\s*[：:]\s*([^\n。，,]+)/i, key: '宠物' },
+    { regex: /家人\s*[：:]\s*([^\n。，,]+)/i, key: '家人' },
   ]
   
-  const results: { key: string; value: string }[] = []
-  
-  patterns.forEach(({ regex, key }) => {
+  for (const { regex, key } of patterns) {
     const match = content.match(regex)
     if (match) {
-      results.push({ key, value: match[2].trim() })
+      return { key, value: match[1].trim() }
     }
-  })
+  }
   
-  return results
+  return { key: null, value: null }
 }
 
 let lastMockIndex = -1

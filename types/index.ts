@@ -19,6 +19,7 @@ export interface Message {
   content: string
   createdAt: Date
   imageUrl?: string
+  loadingType?: 'normal' | 'image'
 }
 
 export interface ApiResponse<T = null> {

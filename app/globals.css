@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+:root {
+  --color-primary-50: #fdf2f8;
+  --color-primary-100: #fce7f3;
+  --color-primary-200: #fbcfe8;
+  --color-primary-300: #f9a8d4;
+  --color-primary-400: #f472b6;
+  --color-primary-500: #ec4899;
+  --color-primary-600: #db2777;
+  --color-primary-700: #be185d;
+  --color-primary-800: #9d174d;
+  --color-primary-900: #831843;
+  
+  --color-axing-blue-50: #eff6ff;
+  --color-axing-blue-100: #dbeafe;
+  --color-axing-blue-200: #bfdbfe;
+  --color-axing-blue-300: #93c5fd;
+  --color-axing-blue-400: #60a5fa;
+  --color-axing-blue-500: #3b82f6;
+  --color-axing-blue-600: #2563eb;
+  --color-axing-blue-700: #1d4ed8;
+  --color-axing-blue-800: #1e40af;
+  --color-axing-blue-900: #1e3a8a;
+  
+  --color-axing-orange-400: #fb923c;
+  --color-axing-orange-500: #f97316;
+  
+  --color-soft-bg: #fef7ff;
+  --color-warm-white: #fffcf9;
+  
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  
+  --shadow-soft: 0 4px 20px rgba(236, 72, 153, 0.08);
+  --shadow-medium: 0 8px 32px rgba(236, 72, 153, 0.12);
+  --shadow-strong: 0 12px 48px rgba(236, 72, 153, 0.16);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -11,4 +52,207 @@
 html, body {
   height: 100%;
   width: 100%;
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: linear-gradient(135deg, #fef7ff 0%, #fff5f5 50%, #f0f9ff 100%);
+  min-height: 100vh;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+  animation: dot-flash 1s infinite;
+}
+
+.dot-2 {
+  animation-delay: 0.3s;
+}
+
+.dot-3 {
+  animation-delay: 0.6s;
+}
+
+@keyframes dot-flash {
+  0%, 50% {
+    opacity: 0;
+  }
+  25%, 75% {
+    opacity: 1;
+  }
+}
+
+.fade-transition {
+  transition: opacity 0.5s ease-in-out;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 4s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
+
+.animate-wave {
+  animation: wave 1s ease-in-out infinite;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+.font-display {
+  font-family: 'Ma Shan Zheng', serif;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-warm {
+  background: linear-gradient(135deg, #fef7ff 0%, #fff5f5 50%, #f0f9ff 100%);
+}
+
+.bg-gradient-axing {
+  background: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
+}
+
+.bg-gradient-axing-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.shadow-axing {
+  box-shadow: 0 8px 32px rgba(236, 72, 153, 0.12);
+}
+
+.shadow-axing-lg {
+  box-shadow: 0 12px 48px rgba(236, 72, 153, 0.16);
 }
