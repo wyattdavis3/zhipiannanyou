@@ -23,6 +23,14 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
     
+    if (!user.password) {
+      return NextResponse.json({
+        success: false,
+        message: '密码不对哦，再想想？',
+        data: null
+      }, { status: 400 })
+    }
+    
     const isPasswordValid = await comparePassword(password, user.password)
     if (!isPasswordValid) {
       return NextResponse.json({

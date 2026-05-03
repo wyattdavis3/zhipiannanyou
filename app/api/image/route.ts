@@ -1,25 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 import { generateImage, getImageCaption } from '@/lib/image'
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || !session.user?.id) {
       return NextResponse.json({
         success: false,
         message: '请先登录',
-        data: null
-      }, { status: 401 })
-    }
-    
-    const token = authHeader.split(' ')[1]
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({
-        success: false,
-        message: '登录已过期，请重新登录',
         data: null
       }, { status: 401 })
     }

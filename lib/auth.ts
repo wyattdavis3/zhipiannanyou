@@ -1,10 +1,21 @@
-import { NextAuthOptions } from "next-auth"
+import { NextAuthOptions, Session } from "next-auth"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      name?: string | null
+      email?: string | null
+      image?: string | null
+    }
+  }
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10)
