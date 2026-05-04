@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import './globals.css'
 import SessionProvider from '@/components/SessionProvider'
 import TawkChat from '@/components/tawk-chat'
-import Footer from '@/components/Footer'
 
 export const metadata: Metadata = {
   title: '纸片人男友2.0 - 阿星',
@@ -16,9 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className="min-h-screen flex flex-col">
+      <body>
         <SessionProvider>{children}</SessionProvider>
-        <Footer />
         <TawkChat />
       </body>
     </html>
