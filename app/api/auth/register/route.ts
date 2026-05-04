@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword, generateToken } from '@/lib/auth'
+import { sendWelcomeEmail } from '@/lib/email'
 
 export async function POST(request: Request) {
   try {
@@ -71,6 +72,13 @@ export async function POST(request: Request) {
         lastUsedDate: new Date().toISOString().split('T')[0]
       }
     })
+    
+    // 注册成功后发欢迎邮件
+    try {
+      await sendWelcomeEmail(user.email, user.name ?? user.email)
+    } catch (error) {
+      console.error('欢迎邮件发送失败：', error)
+    }
     
     const token = generateToken(user.id)
     
