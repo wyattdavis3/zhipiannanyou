@@ -8,23 +8,25 @@ datasource db {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String?    @unique
-  emailVerified DateTime?
-  password      String?
-  name          String?
-  image         String?
-  provider      String     @default("credentials")
-  providerId    String?
-  dailyLimit    Int        @default(20)
-  todayUsed     Int        @default(0)
-  lastUsedDate  String     @default("")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  profiles      UserProfile[]
-  conversations Conversation[]
-  accounts      Account[]
-  sessions      Session[]
+  id              String     @id @default(cuid())
+  email           String?    @unique
+  emailVerified   DateTime?
+  password        String?
+  name            String?
+  image           String?
+  provider        String     @default("credentials")
+  providerId      String?
+  dailyLimit      Int        @default(20)
+  todayUsed       Int        @default(0)
+  lastUsedDate    String     @default("")
+  resetToken      String?
+  resetTokenExpiry DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  profiles        UserProfile[]
+  conversations   Conversation[]
+  accounts        Account[]
+  sessions        Session[]
 }
 
 model Account {

@@ -25,6 +25,36 @@ export async function sendWelcomeEmail(userEmail: string, userName: string) {
   }
 }
 
+export async function sendResetPasswordEmail(userEmail: string, token: string) {
+  try {
+    const resetUrl = `https://www.psychopatrolr.online/reset-password?token=${token}`
+    
+    await resend.emails.send({
+      from: '阿星 <hello@psychopatrolr.online>',
+      to: userEmail,
+      subject: '密码忘了？没关系，我帮你搞定 😎',
+      html: `
+        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+          <h2>哎呀，你忘了密码？</h2>
+          <p>没关系，我帮你重置就好啦~</p>
+          <p>点击下面的链接，就能设置新密码了：</p>
+          <p style="margin: 20px 0;">
+            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #ec4899, #f97316); color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              重置密码
+            </a>
+          </p>
+          <p>这个链接1小时内有效哦，别忘记了~</p>
+          <p>如果不是你操作的，忽略这条消息就好啦。</p>
+          <br/>
+          <p>—— 永远在的阿星</p>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error('重置密码邮件发送失败：', error)
+  }
+}
+
 export async function sendDailyLoveLetterToAll() {
   try {
     const users = await prisma.user.findMany({

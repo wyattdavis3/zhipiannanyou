@@ -28,6 +28,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('')
   const router = useRouter()
   const { data: session, status } = useSession()
 
@@ -83,6 +87,9 @@ export default function Home() {
         })
 
         if (result?.ok) {
+          const storage = rememberMe ? localStorage : sessionStorage
+          storage.setItem('userEmail', email)
+          storage.setItem('rememberMe', rememberMe.toString())
           router.push('/chat')
         } else {
           setError(result?.error || '邮箱或密码错误')
@@ -90,6 +97,31 @@ export default function Home() {
       }
     } catch {
       setError('网络出错了，请稍后再试')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      setForgotPasswordMessage('请输入邮箱地址')
+      return
+    }
+
+    setLoading(true)
+    setForgotPasswordMessage('')
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotPasswordEmail })
+      })
+
+      const data = await response.json()
+      setForgotPasswordMessage(data.message)
+    } catch {
+      setForgotPasswordMessage('发送失败，请稍后再试')
     } finally {
       setLoading(false)
     }
@@ -449,6 +481,26 @@ export default function Home() {
                 />
               </div>
 
+              {authMode === 'login' && (
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-400"
+                    />
+                    <span className="text-sm text-gray-500">记住我</span>
+                  </label>
+                  <button
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-pink-500 hover:text-pink-600 transition-colors"
+                  >
+                    忘记密码？
+                  </button>
+                </div>
+              )}
+
               {authMode === 'register' && (
                 <div className="flex justify-center">
                   <Turnstile
@@ -496,6 +548,75 @@ export default function Home() {
                 className="text-pink-500 hover:text-pink-600 text-sm font-medium transition-colors"
               >
                 {authMode === 'login' ? '还没注册？点我' : '已经注册了？点我登录'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showForgotPassword && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowForgotPassword(false)}
+        >
+          <div
+            className="relative bg-white rounded-3xl shadow-axing-lg p-8 max-w-md w-full animate-scale-in"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowForgotPassword(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-100 to-orange-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">忘记密码了？</h3>
+              <p className="text-gray-500 mt-2">告诉我你的邮箱，我帮你重置</p>
+            </div>
+
+            {forgotPasswordMessage && (
+              <div className={`px-4 py-3 rounded-xl mb-4 text-center text-sm ${forgotPasswordMessage.includes('成功') || forgotPasswordMessage.includes('已发送') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                {forgotPasswordMessage}
+              </div>
+            )}
+
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-100 to-orange-100 rounded-xl opacity-50"></div>
+              <input
+                type="email"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                className="relative w-full px-4 py-3 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-pink-400 focus:border-transparent outline-none transition-all text-gray-900 placeholder-gray-400"
+                placeholder="你的邮箱"
+              />
+            </div>
+
+            <button
+              onClick={handleForgotPassword}
+              disabled={loading}
+              className="w-full py-3.5 bg-gradient-axing text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? '发送中...' : '发送重置链接'}
+            </button>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  setShowForgotPassword(false)
+                  setForgotPasswordEmail('')
+                  setForgotPasswordMessage('')
+                }}
+                className="text-gray-500 hover:text-gray-700 text-sm"
+              >
+                返回登录
               </button>
             </div>
           </div>
