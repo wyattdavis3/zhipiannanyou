@@ -22,17 +22,33 @@ export async function POST(request: Request) {
     const tempImageUrl = await generateImage(prompt || 'young man in casual clothes, warm smile, daily life scene')
     const caption = getImageCaption()
     
-    const imageResponse = await fetch(tempImageUrl)
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
-    const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.png`
-    const permanentUrl = await uploadToR2(imageBuffer, fileName, 'image/png')
+    if (!tempImageUrl) {
+      console.error('Image generation failed: tempImageUrl is empty')
+      return NextResponse.json({
+        success: false,
+        message: '生成图片失败',
+        data: null
+      }, { status: 500 })
+    }
+    
+    let imageUrl = tempImageUrl
+    
+    try {
+      const imageResponse = await fetch(tempImageUrl)
+      const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+      const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.png`
+      imageUrl = await uploadToR2(imageBuffer, fileName, 'image/png')
+    } catch (r2Error) {
+      console.error('R2 upload failed, using temp URL:', r2Error)
+    }
     
     return NextResponse.json({
       success: true,
       message: 'success',
-      data: { imageUrl: permanentUrl, caption }
+      data: { imageUrl, caption }
     })
-  } catch {
+  } catch (error) {
+    console.error('Image API Error:', error)
     return NextResponse.json({
       success: false,
       message: '生成图片失败',

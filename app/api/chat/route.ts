@@ -39,9 +39,13 @@ const extractUserInfoAsync = async (userId: string, message: string) => {
 
 export async function POST(request: Request) {
   try {
+    console.log('=== Chat API Called ===')
+    console.log('Request timestamp:', new Date().toISOString())
+    
     const session = await getServerSession(authOptions)
     
     if (!session || !session.user?.id) {
+      console.log('Session not found or user not logged in')
       return NextResponse.json({
         success: false,
         message: '请先登录',
@@ -49,8 +53,11 @@ export async function POST(request: Request) {
       }, { status: 401 })
     }
     
+    console.log('User ID:', session.user.id)
+    
     const { message } = await request.json()
     if (!message) {
+      console.log('Empty message received')
       return NextResponse.json({
         success: false,
         message: '请输入消息',
@@ -58,14 +65,26 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
     
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+    console.log('Message:', message)
+    
+    let user
+    try {
+      user = await prisma.user.findUnique({ where: { id: session.user.id } })
+    } catch (dbError) {
+      console.error('Database error (user lookup):', dbError)
+      throw new Error('Database connection failed')
+    }
+    
     if (!user) {
+      console.log('User not found in database')
       return NextResponse.json({
         success: false,
         message: '用户不存在',
         data: null
       }, { status: 404 })
     }
+    
+    console.log('User found:', user.email)
     
     const imageKeywords = ['想看你', '来张照片', '发张照片', '照片', '图片', '看看你']
     const needsImage = imageKeywords.some(keyword => message.includes(keyword))
