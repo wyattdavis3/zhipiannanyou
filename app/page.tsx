@@ -164,7 +164,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-warm overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-48 -right-48 w-[400px] h-[400px] bg-gradient-to-br from-pink-300/30 to-orange-200/30 rounded-full blur-3xl animate-pulse-soft"></div>
         <div className="absolute top-1/4 -left-32 w-[320px] h-[320px] bg-gradient-to-br from-blue-200/25 to-purple-200/25 rounded-full blur-3xl animate-pulse-soft" style={{ animationDelay: '1s' }}></div>
         <div className="absolute -bottom-32 right-1/4 w-[280px] h-[280px] bg-gradient-to-br from-rose-200/30 to-pink-200/30 rounded-full blur-3xl animate-pulse-soft" style={{ animationDelay: '2s' }}></div>
