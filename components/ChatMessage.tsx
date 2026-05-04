@@ -60,7 +60,7 @@ export default function ChatMessage({ message, index = 0 }: ChatMessageProps) {
                             src={message.imageUrl} 
                             alt="阿星的照片" 
                             className="relative w-full max-w-xs rounded-xl shadow-lg group-hover:scale-[1.02] transition-transform duration-300"
-                            onClick={() => setPreviewImage(message.imageUrl)}
+                            onClick={() => setPreviewImage(message.imageUrl ?? null)}
                           />
                           <div className="absolute inset-0 bg-black/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
