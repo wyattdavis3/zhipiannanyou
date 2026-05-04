@@ -133,7 +133,11 @@ export async function POST(request: Request) {
         }
       }
 
-      response = getImageCaption()
+      // 生成符合阿星风格的配图文案
+      const captionPrompt = `你是阿星，用土味情话风格，结合"刚拍了一张照片发给对方"这个场景，说一句话。要求：一句话，口语化，带点无厘头或自恋，不超过20字。直接输出这句话，不要任何解释。`
+      const captionResponse = await callLLM(await buildSystemPrompt(user.id), [{ role: 'user', content: captionPrompt }])
+      response = captionResponse || '你看，这是我。'
+      console.log('Generated caption:', response)
       console.log('Image generated:', imageUrl ? 'success' : 'failed')
     } else {
       const systemPrompt = await buildSystemPrompt(user.id)
