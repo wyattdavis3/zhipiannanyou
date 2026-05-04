@@ -4,7 +4,7 @@ import { hashPassword, generateToken } from '@/lib/auth'
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, turnstileToken } = await request.json()
     
     if (!email || !password) {
       return NextResponse.json({
@@ -12,6 +12,44 @@ export async function POST(request: Request) {
         message: '邮箱和密码不能为空',
         data: null
       }, { status: 400 })
+    }
+
+    if (!turnstileToken) {
+      return NextResponse.json({
+        success: false,
+        message: '请完成人机验证',
+        data: null
+      }, { status: 400 })
+    }
+
+    const secret = process.env.TURNSTILE_SECRET_KEY
+    if (!secret) {
+      return NextResponse.json({
+        success: false,
+        message: '服务器配置错误',
+        data: null
+      }, { status: 500 })
+    }
+
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        secret,
+        response: turnstileToken,
+      }),
+    })
+
+    const data = await response.json()
+    
+    if (!data.success) {
+      return NextResponse.json({
+        success: false,
+        message: '人机验证失败',
+        data: null
+      }, { status: 403 })
     }
     
     const existingUser = await prisma.user.findUnique({ where: { email } })

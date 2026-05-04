@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signIn, signOut } from 'next-auth/react'
+import { Turnstile } from '@marsidev/react-turnstile'
 
 const PREVIEW_CONVERSATIONS = [
   {
@@ -26,6 +27,7 @@ export default function Home() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const router = useRouter()
   const { data: session, status } = useSession()
 
@@ -43,10 +45,16 @@ export default function Home() {
 
     try {
       if (authMode === 'register') {
+        if (!turnstileToken) {
+          setError('请完成人机验证')
+          setLoading(false)
+          return
+        }
+
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password, turnstileToken })
         })
 
         const data = await response.json()
@@ -66,6 +74,7 @@ export default function Home() {
         } else {
           setError(data.message)
         }
+        setTurnstileToken('')
       } else {
         const result = await signIn('credentials', {
           email,
@@ -439,6 +448,18 @@ export default function Home() {
                   placeholder="你的密码"
                 />
               </div>
+
+              {authMode === 'register' && (
+                <div className="flex justify-center">
+                  <Turnstile
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                    onSuccess={(token: string) => setTurnstileToken(token)}
+                    onError={() => setError('人机验证失败，请重试')}
+                    onExpire={() => setTurnstileToken('')}
+                    className="w-full"
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
