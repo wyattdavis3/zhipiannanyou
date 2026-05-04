@@ -22,20 +22,15 @@ export async function POST(request: Request) {
     const tempImageUrl = await generateImage(prompt || 'young man in casual clothes, warm smile, daily life scene')
     const caption = getImageCaption()
     
-    let imageUrl = tempImageUrl
-    
-    try {
-      const response = await fetch(tempImageUrl)
-      const buffer = await response.arrayBuffer()
-      imageUrl = await uploadToR2(Buffer.from(buffer), 'image/png')
-    } catch (error) {
-      console.error('上传图片到 R2 失败，使用临时链接：', error)
-    }
+    const imageResponse = await fetch(tempImageUrl)
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+    const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.png`
+    const permanentUrl = await uploadToR2(imageBuffer, fileName, 'image/png')
     
     return NextResponse.json({
       success: true,
       message: 'success',
-      data: { imageUrl, caption }
+      data: { imageUrl: permanentUrl, caption }
     })
   } catch {
     return NextResponse.json({

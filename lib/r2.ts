@@ -1,5 +1,4 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { nanoid } from 'nanoid'
 
 const s3Client = new S3Client({
   region: 'auto',
@@ -12,9 +11,9 @@ const s3Client = new S3Client({
 
 export async function uploadToR2(
   fileBuffer: Buffer,
+  fileName: string,
   contentType: string = 'image/png'
 ): Promise<string> {
-  const fileName = `images/${nanoid()}.png`
   await s3Client.send(
     new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
