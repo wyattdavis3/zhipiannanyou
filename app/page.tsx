@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { Turnstile } from '@marsidev/react-turnstile'
@@ -36,6 +36,15 @@ export default function Home() {
   const { data: session, status } = useSession()
 
   const baseImageUrl = '/axing-base.webp'
+
+  useEffect(() => {
+    const remembered = localStorage.getItem('rememberedEmail')
+    if (remembered) {
+      setEmail(remembered)
+      setRememberMe(true)
+      setAuthMode('login')
+    }
+  }, [])
 
   const handleAuthSwitch = (mode: 'login' | 'register') => {
     setAuthMode(mode)
@@ -87,9 +96,11 @@ export default function Home() {
         })
 
         if (result?.ok) {
-          const storage = rememberMe ? localStorage : sessionStorage
-          storage.setItem('userEmail', email)
-          storage.setItem('rememberMe', rememberMe.toString())
+          if (rememberMe) {
+            localStorage.setItem('rememberedEmail', email)
+          } else {
+            localStorage.removeItem('rememberedEmail')
+          }
           router.push('/chat')
         } else {
           setError(result?.error || '邮箱或密码错误')
