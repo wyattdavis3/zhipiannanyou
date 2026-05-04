@@ -401,11 +401,6 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="px-6 py-8 text-center">
-          <p className="text-gray-400 text-sm font-light">
-            纸片人男友 2.0 - 阿星出品 · <a href="mailto:hello@psychopatrolr.online" className="text-gray-400 hover:text-pink-400 transition-colors">联系我们</a>
-          </p>
-        </footer>
       </main>
 
       {showAuthModal && !session && (
