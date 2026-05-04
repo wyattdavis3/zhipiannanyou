@@ -117,10 +117,24 @@ export async function POST(request: Request) {
       console.log('Final baseImageUrl:', baseImageUrl ? baseImageUrl.substring(0, 80) + '...' : 'empty')
       
       const prompt = `young man in casual clothes, warm smile, daily life scene, ${message}`
-      imageUrl = await generateImage(prompt, baseImageUrl)
+      let tempImageUrl = await generateImage(prompt, baseImageUrl)
+      console.log('Generated image URL:', tempImageUrl || 'empty')
+      
+      // 转成 base64 避免临时链接过期
+      if (tempImageUrl) {
+        try {
+          const imageResponse = await fetch(tempImageUrl)
+          const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+          imageUrl = `data:image/png;base64,${imageBuffer.toString('base64')}`
+          console.log('Image converted to base64 successfully')
+        } catch (base64Error) {
+          console.error('Error converting image to base64:', base64Error)
+          imageUrl = tempImageUrl // 降级使用临时链接
+        }
+      }
+      
       response = getImageCaption()
       console.log('Image generated:', imageUrl ? 'success' : 'failed')
-      console.log('Generated image URL:', imageUrl || 'empty')
     } else {
       const systemPrompt = await buildSystemPrompt(user.id)
       
