@@ -39,15 +39,32 @@ export async function POST(req: NextRequest) {
     // 第二步：尝试上传到 R2，失败则降级用临时链接
     let imageUrl = tempImageUrl
     try {
+      console.log('[Image API] 开始处理图片上传')
+      console.log('[Image API] 临时链接:', tempImageUrl)
+      
       const imageResponse = await fetch(tempImageUrl)
-      const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
+      console.log('[Image API] 获取图片响应状态:', imageResponse.status)
+      
+      const arrayBuffer = await imageResponse.arrayBuffer()
+      const imageBuffer = Buffer.from(arrayBuffer)
+      console.log('[Image API] 图片大小:', imageBuffer.length, 'bytes')
+      
       const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.png`
+      console.log('[Image API] 生成文件名:', fileName)
+      
+      console.log('[R2] 开始上传 - ENDPOINT:', process.env.R2_ENDPOINT)
+      console.log('[R2] 开始上传 - BUCKET:', process.env.R2_BUCKET_NAME)
+      console.log('[R2] 开始上传 - ACCESS_KEY_ID存在:', !!process.env.R2_ACCESS_KEY_ID)
+      
       const permanentUrl = await uploadToR2(imageBuffer, fileName, 'image/png')
       imageUrl = permanentUrl
-      console.log('[R2] 上传成功：', permanentUrl)
+      console.log('[R2] 上传成功！永久链接:', permanentUrl)
     } catch (r2Error) {
-      console.error('[R2] 上传失败，使用临时链接：', r2Error)
-      // 降级：继续用 tempImageUrl
+      console.error('[R2] 上传失败 =======================')
+      console.error('[R2] 错误类型:', (r2Error as Error).constructor.name)
+      console.error('[R2] 错误消息:', (r2Error as Error).message)
+      console.error('[R2] 错误堆栈:', (r2Error as Error).stack)
+      console.log('[R2] 降级使用临时链接:', tempImageUrl)
     }
 
     return NextResponse.json({
