@@ -103,7 +103,10 @@ export default function Home() {
           }
           router.push('/chat')
         } else {
-          setError(result?.error || '邮箱或密码错误')
+          const errorMessage = result?.error === 'CredentialsSignin' 
+            ? '账号不存在，请先注册' 
+            : (result?.error || '邮箱或密码错误')
+          setError(errorMessage)
         }
       }
     } catch {
