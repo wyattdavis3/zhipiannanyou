@@ -5,12 +5,9 @@ export default function Footer() {
     <footer className="py-6 px-4 bg-gray-900/50 border-t border-white/10">
       <div className="max-w-2xl mx-auto text-center">
         <p className="text-sm text-gray-400">
-          有问题或建议？联系我们：
-          <a
-            href="mailto:feedback@psychopatrolr.online"
-            className="underline hover:text-gray-200 ml-1 transition-colors duration-200"
-          >
-            feedback@psychopatrolr.online
+          有问题或建议？
+          <a href="mailto:feedback@psychopatrolr.online" className="hover:underline text-blue-400 hover:text-blue-300 ml-1 transition-colors duration-200">
+            联系我们
           </a>
         </p>
         <div className="mt-4 flex items-center justify-center gap-4">
