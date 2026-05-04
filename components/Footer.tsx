@@ -14,10 +14,7 @@ export default function Footer() {
           <button
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-full hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
             onClick={() => {
-              // Crisp 在线聊天按钮
-              if (window.Crisp) {
-                window.Crisp.chat.open()
-              }
+              window.location.href = 'mailto:feedback@psychopatrolr.online'
             }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
