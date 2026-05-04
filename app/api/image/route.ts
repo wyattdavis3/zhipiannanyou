@@ -37,10 +37,21 @@ export async function POST(request: Request) {
       const imageResponse = await fetch(tempImageUrl)
       const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
       const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.png`
-      imageUrl = await uploadToR2(imageBuffer, fileName, 'image/png')
+      
+      console.log('[R2] 开始上传，文件名：', fileName)
+      console.log('[R2] R2_ENDPOINT:', process.env.R2_ENDPOINT)
+      console.log('[R2] R2_BUCKET_NAME:', process.env.R2_BUCKET_NAME)
+      console.log('[R2] R2_PUBLIC_URL:', process.env.R2_PUBLIC_URL)
+      
+      const permanentUrl = await uploadToR2(imageBuffer, fileName, 'image/png')
+      console.log('[R2] 上传成功，永久链接：', permanentUrl)
+      imageUrl = permanentUrl
     } catch (r2Error) {
-      console.error('R2 upload failed, using temp URL:', r2Error)
+      console.error('[R2] 上传失败，错误：', r2Error)
+      console.log('[R2] 降级使用临时链接：', tempImageUrl)
     }
+    
+    console.log('[Image API] 最终返回给前端的 imageUrl：', imageUrl)
     
     return NextResponse.json({
       success: true,
