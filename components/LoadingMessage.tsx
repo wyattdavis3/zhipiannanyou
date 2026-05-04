@@ -18,8 +18,8 @@ export default function LoadingMessage({ type }: LoadingMessageProps) {
   }, [type])
   
   const messages = [
-    '找个好角度……',
-    '调整一下表情……'
+    '找个好角度',
+    '调整一下表情'
   ]
   
   const text = type === 'normal' ? '对方正在输入' : messages[phase]
