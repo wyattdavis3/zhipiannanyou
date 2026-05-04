@@ -6,7 +6,7 @@ import { sendWelcomeEmail } from '@/lib/email'
 export async function POST(request: Request) {
   try {
     const { email, password, turnstileToken } = await request.json()
-    
+
     if (!email || !password) {
       return NextResponse.json({
         success: false,
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     })
 
     const data = await response.json()
-    
+
     if (!data.success) {
       return NextResponse.json({
         success: false,
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         data: null
       }, { status: 403 })
     }
-    
+
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
       return NextResponse.json({
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         data: null
       }, { status: 400 })
     }
-    
+
     const hashedPassword = await hashPassword(password)
     const user = await prisma.user.create({
       data: {
@@ -72,16 +72,16 @@ export async function POST(request: Request) {
         lastUsedDate: new Date().toISOString().split('T')[0]
       }
     })
-    
+
     // 注册成功后发欢迎邮件
     try {
-      await sendWelcomeEmail(user.email, user.name ?? user.email)
+      await sendWelcomeEmail(user.email ?? '', user.name ?? user.email ?? '')
     } catch (error) {
       console.error('欢迎邮件发送失败：', error)
     }
-    
+
     const token = generateToken(user.id)
-    
+
     return NextResponse.json({
       success: true,
       message: '注册成功！阿星在等你哦~',
