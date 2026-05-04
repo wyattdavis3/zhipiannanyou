@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import SessionProvider from '@/components/SessionProvider'
 import TawkChat from '@/components/tawk-chat'
@@ -17,6 +18,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="overflow-x-hidden">
       <body className="overflow-x-hidden">
+        {/* Microsoft Clarity */}
+        <Script
+          src="https://www.clarity.ms/tag/wluy6r20dj"
+          strategy="afterInteractive"
+        />
+        
         <SessionProvider>{children}</SessionProvider>
         <Footer />
         <TawkChat />
