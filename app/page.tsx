@@ -453,7 +453,10 @@ export default function Home() {
                 <div className="flex justify-center">
                   <Turnstile
                     siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-                    onSuccess={(token: string) => setTurnstileToken(token)}
+                    onSuccess={(token: string) => {
+                      setTurnstileToken(token)
+                      setError('')
+                    }}
                     onError={() => setError('人机验证失败，请重试')}
                     onExpire={() => setTurnstileToken('')}
                     className="w-full"
