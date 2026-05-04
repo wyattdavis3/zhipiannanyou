@@ -8,7 +8,11 @@ export const generateImage = async (prompt: string, baseImageUrl?: string): Prom
     baseImageUrl = config?.value || process.env.AXING_BASE_IMAGE_URL || ''
   }
   
+  console.log('[Image Generation] baseImageUrl:', baseImageUrl || 'NOT SET')
+  console.log('[Image Generation] AXING_BASE_IMAGE_URL env:', process.env.AXING_BASE_IMAGE_URL || 'NOT SET')
+  
   if (!baseImageUrl) {
+    console.error('[Image Error] 数据库中未找到 base_image_url 配置，且环境变量 AXING_BASE_IMAGE_URL 也未设置')
     return ''
   }
   
