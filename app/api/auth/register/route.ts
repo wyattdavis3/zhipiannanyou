@@ -74,10 +74,8 @@ export async function POST(request: Request) {
     })
 
     // 注册成功后发欢迎邮件
-    try {
-      await sendWelcomeEmail(user.email ?? '', user.name ?? user.email ?? '')
-    } catch (error) {
-      console.error('欢迎邮件发送失败：', error)
+    if (user.email) {
+      await sendWelcomeEmail(user.email, user.name ?? user.email)
     }
 
     const token = generateToken(user.id)
