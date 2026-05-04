@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { generateImage, getImageCaption } from '@/lib/image'
+import { uploadToR2 } from '@/lib/r2'
 
 export async function POST(request: Request) {
   try {
@@ -18,8 +19,18 @@ export async function POST(request: Request) {
     
     const { prompt } = await request.json()
     
-    const imageUrl = await generateImage(prompt || 'young man in casual clothes, warm smile, daily life scene')
+    const tempImageUrl = await generateImage(prompt || 'young man in casual clothes, warm smile, daily life scene')
     const caption = getImageCaption()
+    
+    let imageUrl = tempImageUrl
+    
+    try {
+      const response = await fetch(tempImageUrl)
+      const buffer = await response.arrayBuffer()
+      imageUrl = await uploadToR2(Buffer.from(buffer), 'image/png')
+    } catch (error) {
+      console.error('上传图片到 R2 失败，使用临时链接：', error)
+    }
     
     return NextResponse.json({
       success: true,
