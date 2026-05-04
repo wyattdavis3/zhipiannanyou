@@ -136,7 +136,7 @@ export default function ChatInterface() {
 
   return (
     <>
-      <div className="h-screen flex flex-col bg-gradient-warm">
+      <div className="flex-1 flex flex-col">
         <div className="glass-effect border-b border-white/30">
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
