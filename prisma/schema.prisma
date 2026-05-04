@@ -21,6 +21,7 @@ model User {
   lastUsedDate    String     @default("")
   resetToken      String?
   resetTokenExpiry DateTime?
+  lastImageDate   String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   profiles        UserProfile[]
